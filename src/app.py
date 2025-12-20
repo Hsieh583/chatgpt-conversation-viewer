@@ -4,10 +4,10 @@
 ChatGPT Conversation Viewer - Flask Web Application
 """
 
-from flask import Flask, render_template, request, redirect, url_for, abort
+from flask import Flask, render_template, request, redirect, url_for, abort, jsonify
 import sqlite3
 import markdown
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 app = Flask(__name__)
@@ -163,6 +163,37 @@ def chat_detail(conversation_id):
     return render_template('detail.html',
                          conversation=conversation,
                          messages=messages)
+
+
+@app.route('/api/contribution_data')
+def contribution_data():
+    """
+    API endpoint: Return daily conversation counts for the past year
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get data for the past 365 days
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=365)
+    
+    cursor.execute('''
+        SELECT DATE(create_time) as date, COUNT(*) as count
+        FROM conversations
+        WHERE create_time >= ? AND create_time <= ?
+        GROUP BY DATE(create_time)
+        ORDER BY date ASC
+    ''', (start_date, end_date))
+    
+    results = cursor.fetchall()
+    conn.close()
+    
+    # Convert to dictionary format
+    data = {}
+    for row in results:
+        data[row[0]] = row[1]
+    
+    return jsonify(data)
 
 
 @app.route('/stats')
