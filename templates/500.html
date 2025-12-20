@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}伺服器錯誤 - ChatGPT 對話檢視器{% endblock %}
+
+{% block content %}
+<div class="text-center" style="padding: 4rem 0;">
+    <i class="bi bi-x-octagon-fill" style="font-size: 5rem; color: #dc3545;"></i>
+    <h1 class="display-4 mt-4">500</h1>
+    <p class="lead">伺服器發生錯誤</p>
+    <p class="text-muted">很抱歉，伺服器在處理您的請求時發生了問題。</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-house-fill"></i> 返回首頁
+    </a>
+</div>
+{% endblock %}

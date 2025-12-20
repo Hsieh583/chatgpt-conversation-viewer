@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}{{ conversation.title }} - ChatGPT 對話檢視器{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .chat-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .chat-meta {
+        opacity: 0.95;
+        font-size: 0.95rem;
+    }
+    
+    .chat-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .message-wrapper {
+        margin-bottom: 1.5rem;
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message-bubble {
+        padding: 1.25rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        position: relative;
+    }
+    
+    .message-user {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-left: 4px solid #2196f3;
+        margin-left: 2rem;
+    }
+    
+    .message-assistant {
+        background: white;
+        border-left: 4px solid var(--primary-color);
+        margin-right: 2rem;
+    }
+    
+    .message-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .message-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .icon-user {
+        background: #2196f3;
+        color: white;
+    }
+    
+    .icon-assistant {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .message-content {
+        line-height: 1.6;
+        color: #202123;
+    }
+    
+    .message-content p {
+        margin-bottom: 0.75rem;
+    }
+    
+    .message-content p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .message-content ul, .message-content ol {
+        margin-left: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .message-content pre {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        padding: 1rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+    
+    .message-content code {
+        background-color: #f5f5f5;
+        padding: 0.2rem 0.4rem;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        color: #d63384;
+    }
+    
+    .message-content pre code {
+        background-color: transparent;
+        padding: 0;
+        color: #e6edf3;
+    }
+    
+    .message-content blockquote {
+        border-left: 4px solid #ddd;
+        padding-left: 1rem;
+        color: #666;
+        margin: 1rem 0;
+    }
+    
+    .message-content table {
+        width: 100%;
+        margin: 1rem 0;
+        border-collapse: collapse;
+    }
+    
+    .message-content table th,
+    .message-content table td {
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+    }
+    
+    .message-content table th {
+        background-color: #f5f5f5;
+        font-weight: 600;
+    }
+    
+    .message-time {
+        font-size: 0.85rem;
+        color: #6e7781;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .message-time i {
+        margin-right: 0.3rem;
+    }
+    
+    .back-button {
+        margin-bottom: 2rem;
+    }
+    
+    .conversation-stats {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .stat-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 1.5rem;
+        color: #6e7781;
+    }
+    
+    .stat-item i {
+        margin-right: 0.5rem;
+        color: var(--primary-color);
+    }
+    
+    .empty-conversation {
+        text-align: center;
+        padding: 3rem;
+        color: #6e7781;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Back Button -->
+    <div class="back-button">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回列表
+        </a>
+    </div>
+    
+    <!-- Chat Header -->
+    <div class="chat-header">
+        <h1>{{ conversation.title or '無標題對話' }}</h1>
+        <div class="chat-meta">
+            <i class="bi bi-calendar3"></i> {{ conversation.create_time|datetime }}
+            
+            {% if conversation.tags %}
+                <span class="ms-3">
+                    <i class="bi bi-tags-fill"></i>
+                    {% for tag in conversation.tags.split(',') %}
+                        <span class="badge bg-light text-dark">{{ tag.strip() }}</span>
+                    {% endfor %}
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Conversation Stats -->
+    <div class="conversation-stats">
+        <span class="stat-item">
+            <i class="bi bi-chat-left-text-fill"></i>
+            <strong>{{ messages|length }}</strong> 則訊息
+        </span>
+        <span class="stat-item">
+            <i class="bi bi-file-text"></i>
+            <strong>{{ conversation.total_char_count|default(0) }}</strong> 字元
+        </span>
+    </div>
+    
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="message-wrapper">
+            <div class="message-bubble message-{{ message.role }}">
+                <div class="message-header">
+                    <div class="message-icon icon-{{ message.role }}">
+                        {% if message.role == 'user' %}
+                            <i class="bi bi-person-fill"></i>
+                        {% else %}
+                            <i class="bi bi-robot"></i>
+                        {% endif %}
+                    </div>
+                    <span>
+                        {% if message.role == 'user' %}
+                            使用者
+                        {% else %}
+                            ChatGPT
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="message-content">
+                    {{ message.content|markdown|safe }}
+                </div>
+                
+                <div class="message-time">
+                    <i class="bi bi-clock"></i>
+                    {{ message.create_time|datetime }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-conversation">
+            <i class="bi bi-chat-square-text" style="font-size: 3rem; color: #d0d7de;"></i>
+            <h4>此對話沒有訊息</h4>
+        </div>
+    {% endif %}
+    
+    <!-- Bottom Navigation -->
+    <div class="text-center mt-4 mb-4">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> 返回列表
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Smooth scroll to top button
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add scroll to top functionality
+        window.addEventListener('scroll', function() {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            
+            // Create scroll to top button if it doesn't exist
+            let scrollBtn = document.getElementById('scrollToTop');
+            if (!scrollBtn && scrollTop > 300) {
+                scrollBtn = document.createElement('button');
+                scrollBtn.id = 'scrollToTop';
+                scrollBtn.className = 'btn btn-primary position-fixed';
+                scrollBtn.style.cssText = 'bottom: 20px; right: 20px; z-index: 1000; border-radius: 50%; width: 50px; height: 50px;';
+                scrollBtn.innerHTML = '<i class="bi bi-arrow-up"></i>';
+                scrollBtn.onclick = function() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                document.body.appendChild(scrollBtn);
+            } else if (scrollBtn && scrollTop <= 300) {
+                scrollBtn.remove();
+            }
+        });
+    });
+</script>
+{% endblock %}

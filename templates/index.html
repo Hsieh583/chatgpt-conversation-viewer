@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}對話列表 - ChatGPT 對話檢視器{% endblock %}
+
+{% block extra_css %}
+<style>
+    .conversation-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .conversation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-left-color: var(--primary-color);
+    }
+    
+    .conversation-title {
+        color: #202123;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 1.1rem;
+    }
+    
+    .conversation-title:hover {
+        color: var(--primary-color);
+    }
+    
+    .conversation-meta {
+        color: #6e7781;
+        font-size: 0.9rem;
+    }
+    
+    .badge-tag {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        font-weight: 500;
+        padding: 0.3rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+    
+    .pagination {
+        margin-top: 2rem;
+    }
+    
+    .page-link {
+        color: var(--primary-color);
+        border-color: #dee2e6;
+    }
+    
+    .page-link:hover {
+        color: white;
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .search-info {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6e7781;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: #d0d7de;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h2">
+                <i class="bi bi-chat-dots-fill text-primary"></i>
+                對話列表
+            </h1>
+            <span class="badge bg-secondary">共 {{ total_count }} 筆對話</span>
+        </div>
+        
+        <!-- Search Info -->
+        {% if query %}
+        <div class="search-info">
+            <i class="bi bi-search"></i>
+            搜尋結果: "<strong>{{ query }}</strong>" - 找到 <strong>{{ total_count }}</strong> 筆對話
+            <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary ms-3">
+                <i class="bi bi-x-circle"></i> 清除搜尋
+            </a>
+        </div>
+        {% endif %}
+        
+        <!-- Conversations List -->
+        {% if conversations %}
+            <div class="list-group">
+                {% for conv in conversations %}
+                <div class="list-group-item list-group-item-action conversation-card mb-3">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <a href="{{ url_for('chat_detail', conversation_id=conv.id) }}" 
+                               class="conversation-title">
+                                {{ conv.title or '無標題對話' }}
+                            </a>
+                            
+                            <div class="conversation-meta mt-2">
+                                <i class="bi bi-calendar3"></i>
+                                {{ conv.create_time|datetime }}
+                                
+                                <span class="ms-3">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    {{ conv.total_char_count|default(0) }} 字元
+                                </span>
+                                
+                                {% if conv.tags %}
+                                    <span class="ms-3">
+                                        {% for tag in conv.tags.split(',') %}
+                                            <span class="badge-tag">{{ tag.strip() }}</span>
+                                        {% endfor %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="ms-3">
+                            <a href="{{ url_for('chat_detail', conversation_id=conv.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                查看 <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+            <nav aria-label="對話分頁">
+                <ul class="pagination justify-content-center">
+                    <!-- Previous Button -->
+                    <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{{ url_for('index', page=page-1, q=query) if page > 1 else '#' }}">
+                            <i class="bi bi-chevron-left"></i> 上一頁
+                        </a>
+                    </li>
+                    
+                    <!-- Page Numbers -->
+                    {% set start_page = [1, page - 2]|max %}
+                    {% set end_page = [total_pages, page + 2]|min %}
+                    
+                    {% if start_page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('index', page=1, q=query) }}">1</a>
+                        </li>
+                        {% if start_page > 2 %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% for p in range(start_page, end_page + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('index', page=p, q=query) }}">
+                                {{ p }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if end_page < total_pages %}
+                        {% if end_page < total_pages - 1 %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('index', page=total_pages, q=query) }}">
+                                {{ total_pages }}
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <!-- Next Button -->
+                    <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" 
+                           href="{{ url_for('index', page=page+1, q=query) if page < total_pages else '#' }}">
+                            下一頁 <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h3>{% if query %}沒有找到匹配的對話{% else %}沒有對話記錄{% endif %}</h3>
+                <p class="text-muted">
+                    {% if query %}
+                        嘗試使用不同的關鍵字搜尋，或 
+                        <a href="{{ url_for('index') }}">查看所有對話</a>
+                    {% else %}
+                        請先執行 etl_script.py 來匯入對話資料
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

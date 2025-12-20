@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}統計資訊 - ChatGPT 對話檢視器{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6e7781;
+        font-size: 1rem;
+    }
+    
+    .stat-icon {
+        font-size: 3rem;
+        color: var(--primary-color);
+        opacity: 0.3;
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    .tag-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .tag-item {
+        background: #f8f9fa;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .tag-badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h2 mb-4">
+            <i class="bi bi-bar-chart-fill text-primary"></i>
+            統計資訊
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Total Conversations -->
+    <div class="col-md-4">
+        <div class="stats-card position-relative">
+            <div class="stat-number">{{ total_conversations }}</div>
+            <div class="stat-label">總對話數</div>
+            <i class="bi bi-chat-dots-fill stat-icon"></i>
+        </div>
+    </div>
+    
+    <!-- Total Messages -->
+    <div class="col-md-4">
+        <div class="stats-card position-relative">
+            <div class="stat-number">{{ total_messages }}</div>
+            <div class="stat-label">總訊息數</div>
+            <i class="bi bi-chat-left-text-fill stat-icon"></i>
+        </div>
+    </div>
+    
+    <!-- Average Messages -->
+    <div class="col-md-4">
+        <div class="stats-card position-relative">
+            <div class="stat-number">{{ "%.1f"|format(avg_messages) }}</div>
+            <div class="stat-label">平均訊息數/對話</div>
+            <i class="bi bi-graph-up stat-icon"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Most Active Month -->
+{% if most_active_month %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="stats-card">
+            <h5>
+                <i class="bi bi-calendar-check"></i>
+                最活躍月份
+            </h5>
+            <p class="lead mb-0">
+                <strong>{{ most_active_month[0] }}</strong> - 
+                {{ most_active_month[1] }} 筆對話
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tag Distribution -->
+{% if tag_stats %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="stats-card">
+            <h5 class="mb-3">
+                <i class="bi bi-tags-fill"></i>
+                標籤分布 (前 10 名)
+            </h5>
+            <ul class="tag-list">
+                {% for tag_row in tag_stats %}
+                <li class="tag-item">
+                    <span>{{ tag_row[0] }}</span>
+                    <span class="tag-badge">{{ tag_row[1] }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> 返回對話列表
+        </a>
+    </div>
+</div>
+{% endblock %}

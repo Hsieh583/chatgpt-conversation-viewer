@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}找不到頁面 - ChatGPT 對話檢視器{% endblock %}
+
+{% block content %}
+<div class="text-center" style="padding: 4rem 0;">
+    <i class="bi bi-exclamation-triangle-fill" style="font-size: 5rem; color: #ffc107;"></i>
+    <h1 class="display-4 mt-4">404</h1>
+    <p class="lead">抱歉，找不到您要的頁面</p>
+    <p class="text-muted">您訪問的頁面可能已被移除，或您輸入了錯誤的網址。</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+        <i class="bi bi-house-fill"></i> 返回首頁
+    </a>
+</div>
+{% endblock %}
