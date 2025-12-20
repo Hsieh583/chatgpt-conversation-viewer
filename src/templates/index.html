@@ -461,17 +461,19 @@
         
         // Generate month labels
         const monthsShown = new Set();
-        let monthLabelDate = new Date(gridStartDate);
         const monthLabelElements = [];
+        let monthLabelTime = gridStartDate.getTime();
+        const weekInMs = 7 * 24 * 60 * 60 * 1000;
         
-        while (monthLabelDate <= endDate) {
-            const monthKey = monthLabelDate.getFullYear() + '-' + String(monthLabelDate.getMonth()).padStart(2, '0');
+        while (monthLabelTime <= endDate.getTime()) {
+            const monthLabelDate = new Date(monthLabelTime);
+            const monthKey = monthLabelDate.getFullYear() + '-' + String(monthLabelDate.getMonth() + 1).padStart(2, '0');
             if (!monthsShown.has(monthKey) && monthLabelDate.getDate() <= 7) {
                 monthsShown.add(monthKey);
                 const monthName = monthLabelDate.toLocaleDateString('zh-TW', { month: 'short' });
                 monthLabelElements.push(`<span class="month-label">${monthName}</span>`);
             }
-            monthLabelDate.setDate(monthLabelDate.getDate() + 7);
+            monthLabelTime += weekInMs;
         }
         monthLabels.innerHTML = monthLabelElements.join('');
         
