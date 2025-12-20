@@ -36,6 +36,18 @@ def get_db():
     return conn
 
 
+def sanitize_filename(title, conversation_id, extension):
+    """
+    Sanitize filename by removing non-alphanumeric characters
+    Returns a safe filename with the given extension
+    """
+    safe_title = "".join(c for c in (title or 'conversation') if c.isalnum() or c in (' ', '-', '_')).strip()
+    if not safe_title or not safe_title.replace(' ', '').replace('-', '').replace('_', ''):
+        safe_title = "conversation"
+    safe_title = safe_title[:50]  # Limit length
+    return f"{safe_title}_{conversation_id[:8]}.{extension}"
+
+
 @app.template_filter('markdown')
 def markdown_filter(text):
     """
@@ -312,12 +324,8 @@ def export_markdown(conversation_id):
     response = make_response('\n'.join(md_content))
     response.headers['Content-Type'] = 'text/markdown; charset=utf-8'
     
-    # Safe filename - use only ASCII characters or encode properly
-    safe_title = "".join(c for c in (conversation['title'] or 'conversation') if c.isalnum() or c in (' ', '-', '_')).strip()
-    if not safe_title or not safe_title.replace(' ', '').replace('-', '').replace('_', ''):
-        safe_title = "conversation"
-    safe_title = safe_title[:50]  # Limit length
-    filename = f"{safe_title}_{conversation_id[:8]}.md"
+    # Get safe filename
+    filename = sanitize_filename(conversation['title'], conversation_id, 'md')
     
     # Use RFC 5987 encoding for non-ASCII filenames
     try:
@@ -379,7 +387,7 @@ def export_pdf(conversation_id):
     try:
         pdfmetrics.registerFont(UnicodeCIDFont('STSong-Light'))
         font_name = 'STSong-Light'
-    except:
+    except (ImportError, KeyError, Exception) as e:
         # Fallback to default font if CJK font not available
         font_name = 'Helvetica'
     
@@ -464,7 +472,7 @@ def export_pdf(conversation_id):
         
         try:
             elements.append(Paragraph(content, msg_content_style))
-        except Exception as e:
+        except (ValueError, AttributeError) as e:
             # If content causes issues, use a simplified version
             elements.append(Paragraph("[內容無法正確顯示]", msg_content_style))
         
@@ -473,18 +481,14 @@ def export_pdf(conversation_id):
     # Build PDF
     try:
         doc.build(elements)
-    except Exception as e:
+    except (ValueError, OSError, IOError) as e:
         # If PDF generation fails, return an error
         return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
     
     buffer.seek(0)
     
-    # Safe filename - use only ASCII characters or encode properly
-    safe_title = "".join(c for c in (conversation['title'] or 'conversation') if c.isalnum() or c in (' ', '-', '_')).strip()
-    if not safe_title or not safe_title.replace(' ', '').replace('-', '').replace('_', ''):
-        safe_title = "conversation"
-    safe_title = safe_title[:50]  # Limit length
-    filename = f"{safe_title}_{conversation_id[:8]}.pdf"
+    # Get safe filename
+    filename = sanitize_filename(conversation['title'], conversation_id, 'pdf')
     
     return send_file(
         buffer,
