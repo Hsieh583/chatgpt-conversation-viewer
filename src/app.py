@@ -387,7 +387,7 @@ def export_pdf(conversation_id):
     try:
         pdfmetrics.registerFont(UnicodeCIDFont('STSong-Light'))
         font_name = 'STSong-Light'
-    except (ImportError, KeyError, Exception) as e:
+    except (ImportError, KeyError, RuntimeError):
         # Fallback to default font if CJK font not available
         font_name = 'Helvetica'
     
@@ -411,7 +411,7 @@ def export_pdf(conversation_id):
         fontSize=10,
         fontName=font_name,
         spaceAfter=6,
-        textColor='grey'
+        textColor='gray'
     )
     
     # Message header style
@@ -472,7 +472,7 @@ def export_pdf(conversation_id):
         
         try:
             elements.append(Paragraph(content, msg_content_style))
-        except (ValueError, AttributeError) as e:
+        except (ValueError, AttributeError):
             # If content causes issues, use a simplified version
             elements.append(Paragraph("[內容無法正確顯示]", msg_content_style))
         
