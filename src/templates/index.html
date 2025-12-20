@@ -461,23 +461,22 @@
         
         // Generate month labels
         const monthsShown = new Set();
-        let currentDate = new Date(gridStartDate);
+        let monthLabelDate = new Date(gridStartDate);
         const monthLabelElements = [];
         
-        while (currentDate <= endDate) {
-            const monthKey = currentDate.getFullYear() + '-' + String(currentDate.getMonth()).padStart(2, '0');
-            if (!monthsShown.has(monthKey) && currentDate.getDate() <= 7) {
+        while (monthLabelDate <= endDate) {
+            const monthKey = monthLabelDate.getFullYear() + '-' + String(monthLabelDate.getMonth()).padStart(2, '0');
+            if (!monthsShown.has(monthKey) && monthLabelDate.getDate() <= 7) {
                 monthsShown.add(monthKey);
-                const monthName = currentDate.toLocaleDateString('zh-TW', { month: 'short' });
+                const monthName = monthLabelDate.toLocaleDateString('zh-TW', { month: 'short' });
                 monthLabelElements.push(`<span class="month-label">${monthName}</span>`);
             }
-            currentDate.setDate(currentDate.getDate() + 7);
+            monthLabelDate.setDate(monthLabelDate.getDate() + 7);
         }
         monthLabels.innerHTML = monthLabelElements.join('');
         
         // Generate grid cells
-        currentDate = new Date(gridStartDate);
-        const cells = [];
+        let currentDate = new Date(gridStartDate);
         
         while (currentDate <= endDate) {
             const dateStr = formatDate(currentDate);
@@ -508,8 +507,8 @@
                 });
                 tooltip.textContent = `${displayDate}: ${count} 筆對話`;
                 tooltip.style.display = 'block';
-                tooltip.style.left = rect.left + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
-                tooltip.style.top = rect.top - tooltip.offsetHeight - 8 + 'px';
+                tooltip.style.left = rect.left + window.scrollX + rect.width / 2 - tooltip.offsetWidth / 2 + 'px';
+                tooltip.style.top = rect.top + window.scrollY - tooltip.offsetHeight - 8 + 'px';
             });
             
             cell.addEventListener('mouseleave', function() {
