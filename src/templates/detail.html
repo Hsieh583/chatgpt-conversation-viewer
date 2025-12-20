@@ -23,6 +23,19 @@
         font-size: 0.95rem;
     }
     
+    .chat-export {
+        margin-top: 1rem;
+    }
+    
+    .chat-export .btn {
+        transition: all 0.3s ease;
+    }
+    
+    .chat-export .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
     .chat-container {
         max-width: 900px;
         margin: 0 auto;
@@ -217,6 +230,16 @@
                     {% endfor %}
                 </span>
             {% endif %}
+        </div>
+        <div class="chat-export mt-3">
+            <a href="{{ url_for('export_markdown', conversation_id=conversation.id) }}" 
+               class="btn btn-light btn-sm me-2">
+                <i class="bi bi-file-earmark-text"></i> 匯出 Markdown
+            </a>
+            <a href="{{ url_for('export_pdf', conversation_id=conversation.id) }}" 
+               class="btn btn-light btn-sm">
+                <i class="bi bi-file-earmark-pdf"></i> 匯出 PDF
+            </a>
         </div>
     </div>
     
