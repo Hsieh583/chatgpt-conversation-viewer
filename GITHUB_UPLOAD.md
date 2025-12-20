@@ -81,11 +81,33 @@ git push -u origin main
 上傳前請確認：
 
 - [ ] `.gitignore` 已包含所有敏感檔案
-- [ ] `conversations.json` **沒有**被提交
-- [ ] `chat_history.db` **沒有**被提交
-- [ ] README.md 中的連結已更新（替換 `your-username`）
+- [ ] `data/` 目錄中的所有檔案都被 `.gitignore` 排除
+- [ ] `data/conversations.json` **沒有**被提交
+- [ ] `data/chat_history.db` **沒有**被提交
+- [ ] ChatGPT 下載的所有檔案（file-*, dalle-generations/ 等）都被排除
+- [ ] 專案結構已重組（src/, data/, docs/ 目錄分離）
+- [ ] README.md 中的連結和路徑已更新
 - [ ] 所有文件都已完成
 - [ ] 沒有包含個人敏感資訊
+
+### 🔒 安全性驗證
+
+執行以下命令確認敏感檔案不會被提交：
+
+```bash
+# 查看將要提交的檔案
+git status
+
+# 確認 data/ 目錄中的檔案沒有出現在列表中
+# 應該看到類似這樣的結構：
+# - src/
+# - docs/
+# - .github/
+# - README.md, LICENSE, CHANGELOG.md 等
+# - 但 data/ 不應該出現
+
+# 如果看到 data/ 或其中的檔案，請檢查 .gitignore
+```
 
 ## 📝 後續更新
 

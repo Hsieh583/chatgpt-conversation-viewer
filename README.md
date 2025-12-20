@@ -25,13 +25,39 @@
 📊 **統計資訊** - 查看對話總數、訊息數量等統計資料  
 🎨 **Bootstrap 5 介面** - 現代化、響應式的使用者介面
 
+## 🚀 快速開始
+
+```bash
+# 1. 克隆專案（或下載 ZIP）
+git clone https://github.com/YOUR-USERNAME/chatgpt-conversation-viewer.git
+cd chatgpt-conversation-viewer
+
+# 2. 安裝依賴
+pip install -r requirements.txt
+
+# 3. 準備資料：將 ChatGPT 匯出的檔案放到 data/ 目錄
+mkdir data
+# 將 conversations.json 複製到 data/ 目錄
+
+# 4. 執行 ETL 腳本
+cd src
+python etl_script.py
+
+# 5. 啟動應用程式
+python app.py
+
+# 6. 在瀏覽器開啟 http://127.0.0.1:5000
+```
+
+詳細安裝步驟請參考下方說明。
+
 ## 系統需求
 
 - Python 3.7+
 - 約 2GB 可用記憶體
 - 瀏覽器（Chrome, Firefox, Edge, Safari）
 
-## 安裝步驟
+## 📖 詳細安裝步驟
 
 ### 1. 安裝依賴套件
 
@@ -49,20 +75,26 @@ pip install markdown==3.5.1
 
 ### 2. 準備 JSON 檔案
 
-確保您的 `conversations.json` 檔案位於專案根目錄。
+將您從 ChatGPT 下載的所有檔案放到 `data/` 目錄中：
+
+```bash
+mkdir data
+# 將 conversations.json 和其他檔案移動到 data/ 目錄
+```
 
 ### 3. 執行 ETL 腳本
 
 使用 ETL 腳本解析 JSON 並建立資料庫：
 
 ```bash
-python etl_script.py
+python src/etl_script.py data/conversations.json
 ```
 
-如果 JSON 檔案在不同位置：
+或使用預設路徑：
 
 ```bash
-python etl_script.py path/to/conversations.json
+cd src
+python etl_script.py
 ```
 
 **重要提示**：此步驟可能需要數分鐘，取決於 JSON 檔案大小。腳本會顯示處理進度。
@@ -70,6 +102,7 @@ python etl_script.py path/to/conversations.json
 ### 4. 啟動 Flask 應用程式
 
 ```bash
+cd src
 python app.py
 ```
 
@@ -77,22 +110,39 @@ python app.py
 
 在瀏覽器中訪問：`http://127.0.0.1:5000`
 
-## 專案結構
+## 📂 專案結構
 
 ```
-project_root/
-├── app.py                 # Flask 主應用程式
-├── etl_script.py          # JSON 解析和資料庫建立腳本
-├── requirements.txt       # Python 依賴套件
-├── chat_history.db        # SQLite 資料庫（執行後自動生成）
-├── README.md              # 本檔案
-└── templates/
-    ├── base.html          # 基礎模板
-    ├── index.html         # 對話列表頁面
-    ├── detail.html        # 對話詳細頁面
-    ├── stats.html         # 統計資訊頁面
-    ├── 404.html           # 404 錯誤頁面
-    └── 500.html           # 500 錯誤頁面
+chatgpt-conversation-viewer/
+├── src/                    # 應用程式碼
+│   ├── app.py              # Flask 主應用程式
+│   ├── etl_script.py       # JSON 解析和資料庫建立腳本
+│   └── templates/          # HTML 模板檔案
+│       ├── base.html       # 基礎模板
+│       ├── index.html      # 對話列表頁面
+│       ├── detail.html     # 對話詳細頁面
+│       ├── stats.html      # 統計資訊頁面
+│       ├── 404.html        # 404 錯誤頁面
+│       └── 500.html        # 500 錯誤頁面
+├── data/                   # 用戶資料（被 .gitignore 排除）
+│   ├── conversations.json  # ChatGPT 對話記錄
+│   ├── chat_history.db     # SQLite 資料庫（執行後生成）
+│   └── ...                 # 其他 ChatGPT 下載檔案
+├── docs/                   # 文件
+│   ├── CONTRIBUTING.md     # 貢獻指南
+│   ├── DEPLOYMENT.md       # 部署說明
+│   ├── QUICKSTART.md       # 快速開始
+│   ├── SECURITY.md         # 安全政策
+│   └── DOCUMENTATION.md    # 完整文件
+├── .github/                # GitHub Actions 工作流程
+│   └── workflows/
+│       └── tests.yml       # CI/CD 測試
+├── .gitignore              # Git 忽略檔案
+├── README.md               # 專案介紹（本檔案）
+├── LICENSE                 # MIT 授權
+├── CHANGELOG.md            # 版本紀錄
+├── GITHUB_UPLOAD.md        # GitHub 上傳指南
+└── requirements.txt        # Python 依賴套件
 ```
 
 ## 資料庫結構
