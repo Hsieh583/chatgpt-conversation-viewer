@@ -11,7 +11,8 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+# Change this to a random secret key in production
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-please-change-in-production')
 
 # Database configuration
 DATABASE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'chat_history.db')

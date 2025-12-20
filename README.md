@@ -5,7 +5,11 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey.svg)
 
-一個本地的 ChatGPT 對話歷史記錄查看器，使用 Python Flask 和 SQLite 建構。專門設計用於處理大型 JSON 檔案（約 250MB），在低記憶體環境下運行。
+一個本地的 ChatGPT 對話歷史記錄查看器,使用 Python Flask 和 SQLite 建構。專門設計用於處理大型 JSON 檔案(約 250MB),在低記憶體環境下運行。
+
+> **⚠️ 隱私聲明**  
+> 本專案僅包含應用程式碼,**不包含任何對話資料**。您需要自行從 ChatGPT 匯出 `conversations.json` 檔案。  
+> 所有資料都儲存在本地,不會上傳到任何伺服器。`data/` 目錄已被 `.gitignore` 排除,確保您的私人對話不會被意外提交。
 
 ## 📸 預覽
 
