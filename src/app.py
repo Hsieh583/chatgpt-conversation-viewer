@@ -4,11 +4,21 @@
 ChatGPT Conversation Viewer - Flask Web Application
 """
 
-from flask import Flask, render_template, request, redirect, url_for, abort, jsonify
+from flask import Flask, render_template, request, redirect, url_for, abort, jsonify, make_response, send_file
 import sqlite3
 import markdown
 from datetime import datetime, timedelta
 import os
+import io
+from urllib.parse import quote
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+from reportlab.lib.enums import TA_LEFT
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
 app = Flask(__name__)
 # Change this to a random secret key in production
@@ -24,6 +34,18 @@ def get_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def sanitize_filename(title, conversation_id, extension):
+    """
+    Sanitize filename by removing non-alphanumeric characters
+    Returns a safe filename with the given extension
+    """
+    safe_title = "".join(c for c in (title or 'conversation') if c.isalnum() or c in (' ', '-', '_')).strip()
+    if not safe_title or not safe_title.replace(' ', '').replace('-', '').replace('_', ''):
+        safe_title = "conversation"
+    safe_title = safe_title[:50]  # Limit length
+    return f"{safe_title}_{conversation_id[:8]}.{extension}"
 
 
 @app.template_filter('markdown')
@@ -244,6 +266,236 @@ def stats():
                          avg_messages=avg_messages,
                          most_active_month=most_active_month,
                          tag_stats=tag_stats)
+
+
+@app.route('/export/<conversation_id>/markdown')
+def export_markdown(conversation_id):
+    """
+    Export conversation as Markdown file
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get conversation details
+    cursor.execute('''
+        SELECT id, title, create_time, tags, total_char_count
+        FROM conversations
+        WHERE id = ?
+    ''', (conversation_id,))
+    
+    conversation = cursor.fetchone()
+    
+    if not conversation:
+        conn.close()
+        abort(404)
+    
+    # Get all messages for this conversation
+    cursor.execute('''
+        SELECT id, role, content, create_time
+        FROM messages
+        WHERE conversation_id = ?
+        ORDER BY create_time ASC
+    ''', (conversation_id,))
+    
+    messages = cursor.fetchall()
+    conn.close()
+    
+    # Generate Markdown content
+    md_content = []
+    md_content.append(f"# {conversation['title'] or '無標題對話'}\n")
+    md_content.append(f"**建立時間**: {conversation['create_time']}\n")
+    
+    if conversation['tags']:
+        md_content.append(f"**標籤**: {conversation['tags']}\n")
+    
+    md_content.append(f"**訊息數量**: {len(messages)}\n")
+    md_content.append(f"**字元數**: {conversation['total_char_count'] or 0}\n")
+    md_content.append("\n---\n\n")
+    
+    # Add messages
+    for message in messages:
+        role_name = "👤 使用者" if message['role'] == 'user' else "🤖 ChatGPT"
+        md_content.append(f"## {role_name}\n")
+        md_content.append(f"*時間: {message['create_time']}*\n\n")
+        md_content.append(f"{message['content']}\n\n")
+        md_content.append("---\n\n")
+    
+    # Create response
+    response = make_response('\n'.join(md_content))
+    response.headers['Content-Type'] = 'text/markdown; charset=utf-8'
+    
+    # Get safe filename
+    filename = sanitize_filename(conversation['title'], conversation_id, 'md')
+    
+    # Use RFC 5987 encoding for non-ASCII filenames
+    try:
+        filename.encode('ascii')
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    except UnicodeEncodeError:
+        # Fallback to ASCII-only filename with UTF-8 encoded alternative
+        ascii_filename = f"conversation_{conversation_id[:8]}.md"
+        encoded_filename = quote(filename)
+        response.headers['Content-Disposition'] = f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
+    
+    return response
+
+
+@app.route('/export/<conversation_id>/pdf')
+def export_pdf(conversation_id):
+    """
+    Export conversation as PDF file
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get conversation details
+    cursor.execute('''
+        SELECT id, title, create_time, tags, total_char_count
+        FROM conversations
+        WHERE id = ?
+    ''', (conversation_id,))
+    
+    conversation = cursor.fetchone()
+    
+    if not conversation:
+        conn.close()
+        abort(404)
+    
+    # Get all messages for this conversation
+    cursor.execute('''
+        SELECT id, role, content, create_time
+        FROM messages
+        WHERE conversation_id = ?
+        ORDER BY create_time ASC
+    ''', (conversation_id,))
+    
+    messages = cursor.fetchall()
+    conn.close()
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    
+    # Create the PDF document
+    doc = SimpleDocTemplate(buffer, pagesize=A4,
+                           rightMargin=72, leftMargin=72,
+                           topMargin=72, bottomMargin=18)
+    
+    # Container for the 'Flowable' objects
+    elements = []
+    
+    # Register CJK font for Chinese characters
+    try:
+        pdfmetrics.registerFont(UnicodeCIDFont('STSong-Light'))
+        font_name = 'STSong-Light'
+    except (ImportError, KeyError, RuntimeError):
+        # Fallback to default font if CJK font not available
+        font_name = 'Helvetica'
+    
+    # Define styles
+    styles = getSampleStyleSheet()
+    
+    # Title style
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=16,
+        fontName=font_name,
+        spaceAfter=12,
+        alignment=TA_LEFT
+    )
+    
+    # Metadata style
+    meta_style = ParagraphStyle(
+        'CustomMeta',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName=font_name,
+        spaceAfter=6,
+        textColor='gray'
+    )
+    
+    # Message header style
+    msg_header_style = ParagraphStyle(
+        'MessageHeader',
+        parent=styles['Heading2'],
+        fontSize=12,
+        fontName=font_name,
+        spaceAfter=6,
+        spaceBefore=12
+    )
+    
+    # Message content style
+    msg_content_style = ParagraphStyle(
+        'MessageContent',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName=font_name,
+        spaceAfter=12,
+        leftIndent=20
+    )
+    
+    # Add title
+    title = Paragraph(conversation['title'] or '無標題對話', title_style)
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    # Add metadata
+    meta_lines = [
+        f"建立時間: {conversation['create_time']}",
+        f"訊息數量: {len(messages)}",
+        f"字元數: {conversation['total_char_count'] or 0}"
+    ]
+    
+    if conversation['tags']:
+        meta_lines.append(f"標籤: {conversation['tags']}")
+    
+    for line in meta_lines:
+        elements.append(Paragraph(line, meta_style))
+    
+    elements.append(Spacer(1, 24))
+    
+    # Add messages
+    for message in messages:
+        role_name = "使用者" if message['role'] == 'user' else "ChatGPT"
+        
+        # Message header
+        header_text = f"{role_name} - {message['create_time']}"
+        elements.append(Paragraph(header_text, msg_header_style))
+        
+        # Message content (escape HTML special characters and handle long text)
+        content = message['content'] or ""
+        # Replace special characters that might cause issues
+        content = content.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        # Limit content length to avoid very long pages
+        if len(content) > 5000:
+            content = content[:5000] + "...(內容過長，已截斷)"
+        
+        try:
+            elements.append(Paragraph(content, msg_content_style))
+        except (ValueError, AttributeError):
+            # If content causes issues, use a simplified version
+            elements.append(Paragraph("[內容無法正確顯示]", msg_content_style))
+        
+        elements.append(Spacer(1, 12))
+    
+    # Build PDF
+    try:
+        doc.build(elements)
+    except (ValueError, OSError, IOError) as e:
+        # If PDF generation fails, return an error
+        return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
+    
+    buffer.seek(0)
+    
+    # Get safe filename
+    filename = sanitize_filename(conversation['title'], conversation_id, 'pdf')
+    
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/pdf'
+    )
 
 
 @app.errorhandler(404)
