@@ -345,8 +345,8 @@ def export_message_markdown(message_id):
     """
     Export a single message as Markdown file
     """
-    # Basic input validation - ensure message_id is a non-empty string
-    if not message_id or not isinstance(message_id, str):
+    # Basic input validation - ensure message_id is not empty
+    if not message_id:
         abort(400)
     
     conn = get_db()
@@ -381,8 +381,10 @@ def export_message_markdown(message_id):
     response.headers['Content-Type'] = 'text/markdown; charset=utf-8'
     
     # Get safe filename - use simple ASCII format for message exports
+    # Note: We use a simple format here rather than sanitize_filename() because
+    # message IDs are already system-generated and safe, and we want to preserve
+    # the role prefix for clarity (e.g., message_user_msg-001.md)
     role_prefix = "user" if message['role'] == 'user' else "assistant"
-    # Ensure message_id is string and safely truncate
     filename = f"message_{role_prefix}_{str(message_id)[:8]}.md"
     response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
     
