@@ -296,8 +296,10 @@
                     </div>
                     <a href="{{ url_for('export_message_markdown', message_id=message.id) }}" 
                        class="btn btn-outline-secondary btn-sm message-export-btn" 
+                       role="button"
+                       aria-label="匯出此訊息為 Markdown 檔案"
                        title="匯出此訊息為 Markdown">
-                        <i class="bi bi-file-earmark-text"></i> 匯出
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i> 匯出
                     </a>
                 </div>
                 
