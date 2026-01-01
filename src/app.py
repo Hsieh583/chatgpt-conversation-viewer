@@ -340,6 +340,57 @@ def export_markdown(conversation_id):
     return response
 
 
+@app.route('/export/message/<message_id>/markdown')
+def export_message_markdown(message_id):
+    """
+    Export a single message as Markdown file
+    """
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get message details with conversation info
+    cursor.execute('''
+        SELECT m.id, m.role, m.content, m.create_time, m.conversation_id,
+               c.title
+        FROM messages m
+        JOIN conversations c ON m.conversation_id = c.id
+        WHERE m.id = ?
+    ''', (message_id,))
+    
+    message = cursor.fetchone()
+    conn.close()
+    
+    if not message:
+        abort(404)
+    
+    # Generate Markdown content for single message
+    md_content = []
+    md_content.append(f"# 對話訊息\n")
+    md_content.append(f"**來自對話**: {message['title'] or '無標題對話'}\n")
+    md_content.append(f"**角色**: {'👤 使用者' if message['role'] == 'user' else '🤖 ChatGPT'}\n")
+    md_content.append(f"**時間**: {message['create_time']}\n")
+    md_content.append("\n---\n\n")
+    md_content.append(f"{message['content']}\n")
+    
+    # Create response
+    response = make_response('\n'.join(md_content))
+    response.headers['Content-Type'] = 'text/markdown; charset=utf-8'
+    
+    # Get safe filename
+    role_prefix = "user" if message['role'] == 'user' else "assistant"
+    filename = f"message_{role_prefix}_{message_id[:8]}.md"
+    
+    # Use RFC 5987 encoding for non-ASCII filenames
+    try:
+        filename.encode('ascii')
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+    except UnicodeEncodeError:
+        encoded_filename = quote(filename)
+        response.headers['Content-Disposition'] = f"attachment; filename=\"message_{message_id[:8]}.md\"; filename*=UTF-8''{encoded_filename}"
+    
+    return response
+
+
 @app.route('/export/<conversation_id>/pdf')
 def export_pdf(conversation_id):
     """
