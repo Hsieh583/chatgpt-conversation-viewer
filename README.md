@@ -33,7 +33,7 @@
 
 ```bash
 # 1. 克隆專案（或下載 ZIP）
-git clone https://github.com/YOUR-USERNAME/chatgpt-conversation-viewer.git
+git clone https://github.com/Hsieh583/chatgpt-conversation-viewer.git
 cd chatgpt-conversation-viewer
 
 # 2. 安裝依賴
