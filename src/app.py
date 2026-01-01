@@ -376,17 +376,10 @@ def export_message_markdown(message_id):
     response = make_response('\n'.join(md_content))
     response.headers['Content-Type'] = 'text/markdown; charset=utf-8'
     
-    # Get safe filename
+    # Get safe filename - use simple ASCII format for message exports
     role_prefix = "user" if message['role'] == 'user' else "assistant"
     filename = f"message_{role_prefix}_{message_id[:8]}.md"
-    
-    # Use RFC 5987 encoding for non-ASCII filenames
-    try:
-        filename.encode('ascii')
-        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
-    except UnicodeEncodeError:
-        encoded_filename = quote(filename)
-        response.headers['Content-Disposition'] = f"attachment; filename=\"message_{message_id[:8]}.md\"; filename*=UTF-8''{encoded_filename}"
+    response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     return response
 
