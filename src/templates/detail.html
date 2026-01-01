@@ -73,8 +73,25 @@
     .message-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         margin-bottom: 0.75rem;
         font-weight: 600;
+    }
+    
+    .message-title {
+        display: flex;
+        align-items: center;
+    }
+    
+    .message-export-btn {
+        opacity: 0.6;
+        transition: opacity 0.2s ease;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.85rem;
+    }
+    
+    .message-bubble:hover .message-export-btn {
+        opacity: 1;
     }
     
     .message-icon {
@@ -261,20 +278,29 @@
         <div class="message-wrapper">
             <div class="message-bubble message-{{ message.role }}">
                 <div class="message-header">
-                    <div class="message-icon icon-{{ message.role }}">
-                        {% if message.role == 'user' %}
-                            <i class="bi bi-person-fill"></i>
-                        {% else %}
-                            <i class="bi bi-robot"></i>
-                        {% endif %}
+                    <div class="message-title">
+                        <div class="message-icon icon-{{ message.role }}">
+                            {% if message.role == 'user' %}
+                                <i class="bi bi-person-fill"></i>
+                            {% else %}
+                                <i class="bi bi-robot"></i>
+                            {% endif %}
+                        </div>
+                        <span>
+                            {% if message.role == 'user' %}
+                                使用者
+                            {% else %}
+                                ChatGPT
+                            {% endif %}
+                        </span>
                     </div>
-                    <span>
-                        {% if message.role == 'user' %}
-                            使用者
-                        {% else %}
-                            ChatGPT
-                        {% endif %}
-                    </span>
+                    <a href="{{ url_for('export_message_markdown', message_id=message.id) }}" 
+                       class="btn btn-outline-secondary btn-sm message-export-btn" 
+                       role="button"
+                       aria-label="匯出此訊息為 Markdown 檔案"
+                       title="匯出此訊息為 Markdown">
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i> 匯出
+                    </a>
                 </div>
                 
                 <div class="message-content">
